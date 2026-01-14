@@ -39,6 +39,8 @@ internal abstract class YuriGardenParser(
 	private val cdnSuffix = "db.$domain/storage/v1/object/public/yuri-garden-store"
 
 	override fun getRequestHeaders(): Headers = Headers.Builder()
+		.add("Referer", "https://$domain/")
+		.add("Origin", "https://$domain")
 		.add("x-app-origin", "https://$domain")
 		.add("User-Agent", UserAgents.KOTATSU)
 		.build()
