@@ -6,6 +6,7 @@ import okhttp3.Response
 import org.json.JSONArray
 import org.json.JSONObject
 import org.jsoup.nodes.Element
+import org.koitharu.kotatsu.parsers.Broken
 import org.koitharu.kotatsu.parsers.MangaLoaderContext
 import org.koitharu.kotatsu.parsers.MangaParserAuthProvider
 import org.koitharu.kotatsu.parsers.MangaSourceParser
@@ -22,7 +23,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-@Deprecated("Moved to Bato.To v4 source")
+@Broken("Original site closed")
 @MangaSourceParser("BATOTO", "Bato.To")
 internal class BatoToParser(context: MangaLoaderContext) : PagedMangaParser(
 	context = context,
