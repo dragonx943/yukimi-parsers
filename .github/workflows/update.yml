@@ -6,11 +6,15 @@ on:
         paths:
             - 'src/main/kotlin/org/koitharu/kotatsu/parsers/**'
 
+env:
+    SIGNER_USERNAME: YakaBot
+    SIGNER_EMAIL: yakateam@proton.me
+
 permissions:
     contents: write
 
 jobs:
-    update-summary:
+    update:
         runs-on: ubuntu-latest
         steps:
             -   name: Checkout repository 🌏
@@ -34,20 +38,15 @@ jobs:
                 run: ./gradlew compileKotlin
                 continue-on-error: true
 
-            -   name: Check for summary update 🔍
-                id: check
+            -   name: Check & Push summary 📤
                 run: |
-                    if git diff --quiet .github/summary.yaml; then
-                        echo "changed=false" >> $GITHUB_OUTPUT
+                    if git status --porcelain .github/summary.yaml | grep .; then
+                        git config user.name "${{ env.SIGNER_USERNAME }}"
+                        git config user.email "${{ env.SIGNER_MAIL }}"
+                        git add .github/summary.yaml
+                        git commit -m "chore: Update summary after compiling the library"
+                        git push origin HEAD:${{ github.head_ref }}
+                        echo "ℹ️ Summary updated"
                     else
-                        echo "changed=true" >> $GITHUB_OUTPUT
+                        echo "ℹ️ No changes in summary"
                     fi
-
-            -   name: Push / Update summary 📤
-                if: steps.check.outputs.changed == 'true'
-                run: |
-                    git config user.name "YakaBot"
-                    git config user.email "yakateam@proton.me"
-                    git add .github/summary.yaml
-                    git commit -m "chore(automatic): Update summary"
-                    git push
