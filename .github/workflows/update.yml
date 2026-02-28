@@ -42,7 +42,7 @@ jobs:
                 run: |
                     if git status --porcelain .github/summary.yaml | grep .; then
                         git config user.name "${{ env.SIGNER_USERNAME }}"
-                        git config user.email "${{ env.SIGNER_MAIL }}"
+                        git config user.email "${{ env.SIGNER_EMAIL }}"
                         git add .github/summary.yaml
                         git commit -m "chore: Update summary after compiling the library"
                         git push origin HEAD:${{ github.head_ref }}
