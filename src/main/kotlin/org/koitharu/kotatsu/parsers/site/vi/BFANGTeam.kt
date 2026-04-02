@@ -62,12 +62,14 @@ internal class BFANGTeam (context: MangaLoaderContext) :
 			)
 		}
 
+		// todo: need to use data-genre (num) instead of genre name
 		if (filter.tags.isNotEmpty()) {
 			filter.tags.forEach {
 				url.addQueryParameter("include", it.key)
 			}
 		}
 
+		// todo: need to use data-genre (num) instead of genre name
 		if (filter.tagsExclude.isNotEmpty()) {
 			filter.tagsExclude.forEach {
 				url.addQueryParameter("exclude", it.key)
@@ -137,7 +139,7 @@ internal class BFANGTeam (context: MangaLoaderContext) :
 					number = chapNum,
 					volume = 0,
 					url = li.select("a").attr("href").toAbsoluteUrl(domain),
-					scanlator = li.select("span.chapter-sub-text").text(),
+					scanlator = li.selectFirst("span.chapter-sub-text")?.text(),
 					uploadDate = parseChapterDate(li.select("span.chapter-time").text()),
 					branch = null,
 					source = source,
