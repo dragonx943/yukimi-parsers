@@ -3,6 +3,7 @@ package org.koitharu.kotatsu.parsers.site.galleryadults.all
 import org.jsoup.internal.StringUtil
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
+import org.koitharu.kotatsu.parsers.Broken
 import org.koitharu.kotatsu.parsers.MangaLoaderContext
 import org.koitharu.kotatsu.parsers.MangaSourceParser
 import org.koitharu.kotatsu.parsers.model.*
@@ -10,6 +11,7 @@ import org.koitharu.kotatsu.parsers.site.galleryadults.GalleryAdultsParser
 import org.koitharu.kotatsu.parsers.util.*
 import java.util.*
 
+@Broken("Use API instead")
 @MangaSourceParser("NHENTAI", "NHentai.net", type = ContentType.HENTAI)
 internal class NHentaiParser(context: MangaLoaderContext) :
 	GalleryAdultsParser(context, MangaParserSource.NHENTAI, "nhentai.net", 25) {
@@ -57,7 +59,7 @@ internal class NHentaiParser(context: MangaLoaderContext) :
 				}
 
 				else -> {
-					append("/search/?q=pages:>0 ")
+					append("/search?q=pages:>0")
 					// for Search with query
 					// append(filter.query.urlEncoded())
 					// append(' ')
