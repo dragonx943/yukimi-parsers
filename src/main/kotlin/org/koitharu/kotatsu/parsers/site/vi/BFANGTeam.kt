@@ -1,5 +1,6 @@
 package org.koitharu.kotatsu.parsers.site.vi
 
+import org.jsoup.nodes.Document
 import org.koitharu.kotatsu.parsers.MangaLoaderContext
 import org.koitharu.kotatsu.parsers.MangaSourceParser
 import org.koitharu.kotatsu.parsers.config.ConfigKey
@@ -29,9 +30,7 @@ import org.koitharu.kotatsu.parsers.util.urlEncoded
 import java.text.SimpleDateFormat
 import java.util.EnumSet
 import java.util.Locale
-import org.koitharu.kotatsu.parsers.Broken
 
-@Broken("Need to add handler for chapters paging")
 @MangaSourceParser("BFANGTEAM", "Moè Truyện", "vi")
 internal class BFANGTeam (context: MangaLoaderContext) :
 	SinglePageMangaParser(context, MangaParserSource.BFANGTEAM) {
@@ -112,46 +111,54 @@ internal class BFANGTeam (context: MangaLoaderContext) :
 	}
 
 	override suspend fun getDetails(manga: Manga): Manga {
-		val response = webClient.httpGet(manga.url.toAbsoluteUrl(domain)).parseHtml()
-		val div = response.select(".detail-info.reveal")
-		val author = div.select("p.manga-author a.inline-link").map { it.text() }.toSet()
-		val altTitles = div.select("p.note").map { it.text().substringAfter("Tên khác: ") }.toSet()
-		val description = div.select(".manga-description p span").text()
+		val doc = webClient.httpGet(manga.url.toAbsoluteUrl(domain)).parseHtml()
+		val div = doc.select(".detail-info.reveal")
 		val isNsfw = div.select(".chips a.chip").any { it.text() == "Adult" }
-		val tags = div.select(".chips a.chip").map {
-			val tag = it.text()
-			MangaTag(
-				title = tag,
-				key = tag.urlEncoded(),
-				source = source,
-			)
-		}.toSet()
 
 		return manga.copy(
-			authors = author,
-			altTitles = altTitles,
-			chapters = response.select("li.chapter").mapChapters(true) { i, li ->
-				val chapterMain = li.select("a .chapter-main .chapter-title-row")
-				val chapNum = chapterMain.select("span.chapter-num")
-					.text().substringAfter("Ch. ").toFloatOrNull() ?: (i + 1).toFloat()
-				val chapTitle = chapterMain.select("span.chapter-title").text()
-				MangaChapter(
-					id = generateUid(chapTitle),
-					title = chapTitle,
-					number = chapNum,
-					volume = 0,
-					url = li.select("a").attr("href").toAbsoluteUrl(domain),
-					scanlator = li.selectFirst("span.chapter-sub-text")?.text(),
-					uploadDate = parseChapterDate(li.select("span.chapter-time").text()),
-					branch = null,
-					source = source,
-				)
-			},
+			authors = div.select("p.manga-author a.inline-link").map { it.text() }.toSet(),
+			altTitles = div.select("p.note").map { it.text().substringAfter("Tên khác: ") }.toSet(),
+			description = div.select(".manga-description p span").text(),
 			contentRating = if (isNsfw) ContentRating.ADULT else null,
-			description = description,
-			tags = tags,
+			tags = div.select(".chips a.chip").map {
+				MangaTag(title = it.text(), key = it.text().urlEncoded(), source = source)
+			}.toSet(),
+			chapters = fetchAllChapters(manga.url.toAbsoluteUrl(domain), doc),
 		)
 	}
+
+	private suspend fun fetchAllChapters(startUrl: String, firstPage: Document): List<MangaChapter> {
+		val chapters = mutableListOf<MangaChapter>()
+		val visited = mutableSetOf(startUrl)
+		var doc = firstPage
+
+		while (true) {
+			chapters += parseChapters(doc)
+			val nextUrl = doc.selectFirst("nav[aria-label*='Phân trang chương'] a[aria-label='Trang chương sau']:not(.is-disabled)")
+				?.absUrl("href")?.takeIf { it.isNotEmpty() && it != "#" && visited.add(it) }
+				?: break
+			doc = webClient.httpGet(nextUrl).parseHtml()
+		}
+
+		return chapters
+	}
+
+	private fun parseChapters(doc: Document): List<MangaChapter> =
+		doc.select("li.chapter").mapChapters(true) { i, li ->
+			val row = li.select("a .chapter-main .chapter-title-row")
+			val title = row.select("span.chapter-title").text()
+			MangaChapter(
+				id = generateUid(title),
+				title = title,
+				number = row.select("span.chapter-num").text().substringAfter("Ch. ").toFloatOrNull() ?: (i + 1).toFloat(),
+				volume = 0,
+				url = li.select("a").attr("href").toAbsoluteUrl(domain),
+				scanlator = li.selectFirst("span.chapter-sub-text")?.text(),
+				uploadDate = parseChapterDate(li.select("span.chapter-time").text()),
+				branch = null,
+				source = source,
+			)
+		}
 
 	override suspend fun getPages(chapter: MangaChapter): List<MangaPage> {
 		val response = webClient.httpGet(chapter.url).parseHtml()
