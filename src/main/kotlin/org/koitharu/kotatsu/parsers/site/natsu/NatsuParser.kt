@@ -482,6 +482,7 @@ internal abstract class NatsuParser(
         val requestBuilder = Request.Builder()
             .url(url)
             .post(body.build())
+			.addHeader(CommonHeaders.USER_AGENT, config[userAgentKey])
             .addHeader(CommonHeaders.REFERER, "https://${domain}/advanced-search/")
             .addHeader(CommonHeaders.ORIGIN, "https://${domain}")
 
