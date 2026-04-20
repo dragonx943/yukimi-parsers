@@ -328,3 +328,4 @@ internal class ZonaTmoParser(context: MangaLoaderContext) : PagedMangaParser(
 		)
 	}
 }
+
